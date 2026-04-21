@@ -20,18 +20,57 @@
 
 ```
 work01/
-├── angular/                            # Angular 前端應用程式
+├── angular/                                    # Angular 前端應用程式
+│   └── src/app/
+│       ├── apod/                               # NASA 每日天文圖片功能模組
+│       │   ├── apod.component.ts               # 元件邏輯：抓取、載入、切換圖片
+│       │   ├── apod.component.html             # 畫面：圖片展示 + 歷史清單
+│       │   ├── apod.component.scss             # 元件樣式
+│       │   ├── apod.module.ts                  # Angular 功能模組
+│       │   ├── apod-routing.module.ts          # /apod 路由設定
+│       │   └── apod.service.ts                 # 呼叫後端 API 的服務
+│       ├── home/                               # 首頁模組
+│       ├── shared/                             # 共用元件與服務
+│       ├── app.module.ts                       # 根模組
+│       ├── app-routing.module.ts               # 全域路由設定
+│       └── route.provider.ts                   # 左側選單項目設定
+│
 ├── src/
-│   ├── MyCompany.MyApp.Application/            # 應用層：業務邏輯與服務
-│   ├── MyCompany.MyApp.Application.Contracts/  # 應用層介面與 DTO 定義
-│   ├── MyCompany.MyApp.DbMigrator/             # 資料庫遷移與初始資料植入工具
-│   ├── MyCompany.MyApp.Domain/                 # 領域層：核心業務模型
-│   ├── MyCompany.MyApp.Domain.Shared/          # 領域共用常數與列舉
-│   ├── MyCompany.MyApp.EntityFrameworkCore/    # EF Core 資料存取層
-│   ├── MyCompany.MyApp.HttpApi/                # HTTP API 控制器定義
-│   ├── MyCompany.MyApp.HttpApi.Client/         # HTTP API 用戶端代理
-│   └── MyCompany.MyApp.HttpApi.Host/           # ASP.NET Core API 主機入口
-└── test/                               # 單元測試與整合測試專案
+│   ├── MyCompany.MyApp.Application/            # 應用層：實作業務邏輯與服務
+│   │   └── Apod/
+│   │       └── ApodAppService.cs               # 呼叫 NASA API、寫入資料庫的核心邏輯
+│   │
+│   ├── MyCompany.MyApp.Application.Contracts/  # 應用層合約：介面與 DTO 定義（供前端或外部使用）
+│   │   └── Apod/
+│   │       ├── ApodImageDto.cs                 # APOD 資料傳輸物件
+│   │       └── IApodAppService.cs              # APOD 服務介面
+│   │
+│   ├── MyCompany.MyApp.DbMigrator/             # 主控台工具：執行 EF Core Migration、植入初始資料
+│   │   └── appsettings.json                    # 資料庫連線字串、NASA API Key
+│   │
+│   ├── MyCompany.MyApp.Domain/                 # 領域層：核心業務實體與規則（不依賴任何框架）
+│   │   └── Apod/
+│   │       └── ApodImage.cs                    # APOD 領域實體（繼承 ABP Entity<Guid>）
+│   │
+│   ├── MyCompany.MyApp.Domain.Shared/          # 領域共用層：常數、列舉、錯誤碼（前後端皆可引用）
+│   │
+│   ├── MyCompany.MyApp.EntityFrameworkCore/    # 資料存取層：EF Core DbContext 與 Migration
+│   │   ├── EntityFrameworkCore/
+│   │   │   └── MyAppDbContext.cs               # 資料庫上下文（含 AppApodImages 資料表設定）
+│   │   └── Migrations/
+│   │       └── 20260421063106_AddApodTable.cs  # 建立 AppApodImages 資料表的 Migration
+│   │
+│   ├── MyCompany.MyApp.HttpApi/                # API 層：HTTP 控制器定義（ABP 自動產生）
+│   ├── MyCompany.MyApp.HttpApi.Client/         # HTTP API 用戶端代理（供其他服務呼叫）
+│   └── MyCompany.MyApp.HttpApi.Host/           # 主機入口：ASP.NET Core Web API 啟動設定
+│       ├── appsettings.json                    # 伺服器設定、資料庫連線、NASA API Key
+│       ├── MyAppHttpApiHostModule.cs           # 模組設定（CORS、Swagger、HttpClient 等）
+│       └── Program.cs                          # 應用程式進入點
+│
+└── test/                                       # 測試專案
+    ├── MyCompany.MyApp.Application.Tests/      # 應用層單元測試
+    ├── MyCompany.MyApp.Domain.Tests/           # 領域層單元測試
+    └── MyCompany.MyApp.EntityFrameworkCore.Tests/ # EF Core 整合測試
 ```
 
 ---

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using MyCompany.MyApp.Apod;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
 using Volo.Abp.BlobStoring.Database.EntityFrameworkCore;
@@ -27,6 +28,7 @@ public class MyAppDbContext :
 {
     /* Add DbSet properties for your Aggregate Roots / Entities here. */
 
+    public DbSet<ApodImage> ApodImages { get; set; }
 
     #region Entities from the modules
 
@@ -81,11 +83,14 @@ public class MyAppDbContext :
         
         /* Configure your own tables/entities inside here */
 
-        //builder.Entity<YourEntity>(b =>
-        //{
-        //    b.ToTable(MyAppConsts.DbTablePrefix + "YourEntities", MyAppConsts.DbSchema);
-        //    b.ConfigureByConvention(); //auto configure for the base class props
-        //    //...
-        //});
+        builder.Entity<ApodImage>(b =>
+        {
+            b.ToTable(MyAppConsts.DbTablePrefix + "ApodImages", MyAppConsts.DbSchema);
+            b.ConfigureByConvention();
+            b.Property(x => x.Date).IsRequired().HasMaxLength(20);
+            b.Property(x => x.Title).IsRequired().HasMaxLength(256);
+            b.Property(x => x.Explanation).IsRequired().HasMaxLength(4000);
+            b.Property(x => x.Url).IsRequired().HasMaxLength(512);
+        });
     }
 }
