@@ -84,6 +84,35 @@ work01/
 - `src/MyCompany.MyApp.HttpApi.Host/appsettings.json`
 - `src/MyCompany.MyApp.DbMigrator/appsettings.json`
 
+### NASA API Key（GitHub 安全做法）
+
+本專案為了方便執行，預設使用 NASA 的 `DEMO_KEY`，無需任何設定即可直接啟動。
+若因流量限制（DEMO_KEY 每小時約 30 次）導致抓取失敗，請依下列步驟設定自己的 API Key：
+
+1. 前往 [https://api.nasa.gov/](https://api.nasa.gov/) 免費申請 API Key
+
+2. 在**專案根目錄**複製範本檔：
+
+```bash
+# Windows
+copy .env.example .env
+
+# macOS / Linux
+cp .env.example .env
+```
+
+3. 編輯 `.env`，將 `your_nasa_api_key_here` 替換為你的 Key：
+
+```env
+NASA_API_KEY=your_nasa_api_key_here
+```
+
+4. **重新啟動後端**，設定即生效（`.env` 在啟動時載入）。
+
+> 程式讀取優先順序：系統環境變數 `NASA_API_KEY` → `.env` 檔案 → 預設 `DEMO_KEY`
+> `.env` 已加入 `.gitignore`，**不會被提交到 GitHub**。
+> `.env.example` 為公開範本，不含真實 Key，**可以**入版控。
+
 ---
 
 ## 首次執行步驟

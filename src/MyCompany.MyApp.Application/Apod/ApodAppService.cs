@@ -15,6 +15,8 @@ namespace MyCompany.MyApp.Apod;
 /// </summary>
 public class ApodAppService : MyAppAppService, IApodAppService
 {
+    private const string DefaultNasaApiKey = "DEMO_KEY";
+
     private readonly IRepository<ApodImage, Guid> _apodRepository;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IConfiguration _configuration;
@@ -34,7 +36,7 @@ public class ApodAppService : MyAppAppService, IApodAppService
     /// </summary>
     public async Task<ApodImageDto> FetchAndSaveAsync()
     {
-        var apiKey = _configuration["Nasa:ApiKey"];
+        var apiKey = ResolveNasaApiKey();
         var url = $"https://api.nasa.gov/planetary/apod?api_key={apiKey}";
 
         var client = _httpClientFactory.CreateClient();
@@ -87,6 +89,16 @@ public class ApodAppService : MyAppAppService, IApodAppService
             Explanation = entity.Explanation,
             Url = entity.Url
         };
+    }
+
+    private string ResolveNasaApiKey()
+    {
+        // Prefer environment variables so secrets don't need to be committed.
+        var apiKey = Environment.GetEnvironmentVariable("NASA_API_KEY")
+            ?? Environment.GetEnvironmentVariable("Nasa__ApiKey")
+            ?? _configuration["Nasa:ApiKey"];
+
+        return string.IsNullOrWhiteSpace(apiKey) ? DefaultNasaApiKey : apiKey;
     }
 
     /// <summary>

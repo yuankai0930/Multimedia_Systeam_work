@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +13,8 @@ public class Program
 {
     public async static Task<int> Main(string[] args)
     {
+        LoadDotEnv();
+
         Log.Logger = new LoggerConfiguration()
             .WriteTo.Async(c => c.File("Logs/logs.txt"))
             .WriteTo.Async(c => c.Console())
@@ -58,6 +61,40 @@ public class Program
         finally
         {
             Log.CloseAndFlush();
+        }
+    }
+
+    private static void LoadDotEnv()
+    {
+        var current = new DirectoryInfo(Directory.GetCurrentDirectory());
+        while (current != null)
+        {
+            var envFilePath = Path.Combine(current.FullName, ".env");
+            if (File.Exists(envFilePath))
+            {
+                foreach (var rawLine in File.ReadAllLines(envFilePath))
+                {
+                    var line = rawLine.Trim();
+                    if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#") || !line.Contains('='))
+                    {
+                        continue;
+                    }
+
+                    var index = line.IndexOf('=');
+                    var key = line[..index].Trim();
+                    var value = line[(index + 1)..].Trim().Trim('"');
+                    if (string.IsNullOrWhiteSpace(key) || !string.IsNullOrEmpty(Environment.GetEnvironmentVariable(key)))
+                    {
+                        continue;
+                    }
+
+                    Environment.SetEnvironmentVariable(key, value);
+                }
+
+                return;
+            }
+
+            current = current.Parent;
         }
     }
 }

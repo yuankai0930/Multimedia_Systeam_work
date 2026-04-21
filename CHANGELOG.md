@@ -5,6 +5,21 @@
 
 ---
 
+## [1.2.0] - 2026-04-21
+
+### 新增
+- **安全性**：新增 `.env.example` 範本檔，提供本機 API Key 設定指引
+- **安全性**：`.gitignore` 補充排除 `.env`、`.env.*`（保留 `.env.example`），防止密鑰洩漏
+
+### 修改
+- **Application 層**：`ApodAppService` 改為優先讀取環境變數 `NASA_API_KEY`，若未設定則 fallback 至 `DEMO_KEY`，避免真實 Key 寫入版控
+- **設定**：`appsettings.json`（HttpApi.Host、DbMigrator）中的 `Nasa:ApiKey` 改為預設值 `DEMO_KEY`
+- **啟動流程**：`HttpApi.Host` 與 `DbMigrator` 的 `Program.cs` 加入 `.env` 自動載入邏輯（向上遍歷目錄搜尋）
+- **README**：新增「NASA API Key（GitHub 安全做法）」設定說明，說明 DEMO_KEY fallback 機制與 `.env` 使用方式
+- **CHANGELOG**：新增本版本更新記錄
+
+---
+
 ## [1.1.0] - 2026-04-21
 
 ### 新增
