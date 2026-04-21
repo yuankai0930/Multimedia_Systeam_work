@@ -1,27 +1,27 @@
-# MyApp
+# MyApp 前端（Angular）
 
-This is a startup project based on the ABP framework. For more information, visit <a href="https://abp.io/" target="_blank">abp.io</a>
+本專案為基於 ABP Framework 的前端啟動專案。更多資訊請造訪 <a href="https://abp.io/" target="_blank">abp.io</a>
 
-## Development server
+## 開發伺服器
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+執行 `ng serve` 啟動開發伺服器，並開啟瀏覽器前往 `http://localhost:4200/`。修改原始碼後應用程式將自動重新載入。
 
-## Code scaffolding
+## 程式碼鷹架
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+執行 `ng generate component component-name` 以產生新元件。也可使用 `ng generate directive|pipe|service|class|guard|interface|enum|module`。
 
-## Build
+## 建置
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
+執行 `ng build` 以建置專案，建置產出會存放於 `dist/` 目錄。若要正式環境建置，請加上 `--prod` 旗標。
 
-## Running unit tests
+## 執行單元測試
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+執行 `ng test` 透過 [Karma](https://karma-runner.github.io) 執行單元測試。
 
-## Running end-to-end tests
+## 執行端對端測試
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice.
+執行 `ng e2e` 透過您選擇的平台執行端對端測試。
 
-## Further help
+## 更多說明
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+執行 `ng help` 或參閱 [Angular CLI 總覽與指令參考](https://angular.io/cli) 頁面以取得更多 Angular CLI 相關說明。
