@@ -1,0 +1,101 @@
+{
+  "template": "app",
+  "imports": {
+    "Volo.Abp.LeptonXLiteTheme": {
+      "version": "4.0.1",
+      "isInstalled": true
+    },
+    "Volo.Abp.Account": {
+      "version": "9.0.1",
+      "isInstalled": true
+    },
+    "Volo.Abp.OpenIddict": {
+      "version": "9.0.1",
+      "isInstalled": true
+    },
+    "Volo.Abp.Identity": {
+      "version": "9.0.1",
+      "isInstalled": true
+    },
+    "Volo.Abp.TenantManagement": {
+      "version": "9.0.1",
+      "isInstalled": true
+    },
+    "Volo.Abp.SettingManagement": {
+      "version": "9.0.1",
+      "isInstalled": true
+    },
+    "Volo.Abp.PermissionManagement": {
+      "version": "9.0.1",
+      "isInstalled": true
+    },
+    "Volo.Abp.FeatureManagement": {
+      "version": "9.0.1",
+      "isInstalled": true
+    }
+  },
+  "folders": {
+    "items": {
+      "src": {},
+      "test": {}
+    }
+  },
+  "packages": {
+    "MyCompany.MyApp.Application": {
+      "path": "src/MyCompany.MyApp.Application/MyCompany.MyApp.Application.abppkg",
+      "folder": "src"
+    },
+    "MyCompany.MyApp.Application.Tests": {
+      "path": "test/MyCompany.MyApp.Application.Tests/MyCompany.MyApp.Application.Tests.abppkg",
+      "folder": "test"
+    },
+    "MyCompany.MyApp.Domain.Shared": {
+      "path": "src/MyCompany.MyApp.Domain.Shared/MyCompany.MyApp.Domain.Shared.abppkg",
+      "folder": "src"
+    },
+    "MyCompany.MyApp.Application.Contracts": {
+      "path": "src/MyCompany.MyApp.Application.Contracts/MyCompany.MyApp.Application.Contracts.abppkg",
+      "folder": "src"
+    },
+    "MyCompany.MyApp.HttpApi": {
+      "path": "src/MyCompany.MyApp.HttpApi/MyCompany.MyApp.HttpApi.abppkg",
+      "folder": "src"
+    },
+    "MyCompany.MyApp.HttpApi.Client": {
+      "path": "src/MyCompany.MyApp.HttpApi.Client/MyCompany.MyApp.HttpApi.Client.abppkg",
+      "folder": "src"
+    },
+    "MyCompany.MyApp.EntityFrameworkCore.Tests": {
+      "path": "test/MyCompany.MyApp.EntityFrameworkCore.Tests/MyCompany.MyApp.EntityFrameworkCore.Tests.abppkg",
+      "folder": "test"
+    },
+    "MyCompany.MyApp.EntityFrameworkCore": {
+      "path": "src/MyCompany.MyApp.EntityFrameworkCore/MyCompany.MyApp.EntityFrameworkCore.abppkg",
+      "folder": "src"
+    },
+    "MyCompany.MyApp.TestBase": {
+      "path": "test/MyCompany.MyApp.TestBase/MyCompany.MyApp.TestBase.abppkg",
+      "folder": "test"
+    },
+    "MyCompany.MyApp.Domain.Tests": {
+      "path": "test/MyCompany.MyApp.Domain.Tests/MyCompany.MyApp.Domain.Tests.abppkg",
+      "folder": "test"
+    },
+    "MyCompany.MyApp.HttpApi.Client.ConsoleTestApp": {
+      "path": "test/MyCompany.MyApp.HttpApi.Client.ConsoleTestApp/MyCompany.MyApp.HttpApi.Client.ConsoleTestApp.abppkg",
+      "folder": "test"
+    },
+    "MyCompany.MyApp.DbMigrator": {
+      "path": "src/MyCompany.MyApp.DbMigrator/MyCompany.MyApp.DbMigrator.abppkg",
+      "folder": "src"
+    },
+    "MyCompany.MyApp.HttpApi.Host": {
+      "path": "src/MyCompany.MyApp.HttpApi.Host/MyCompany.MyApp.HttpApi.Host.abppkg",
+      "folder": "src"
+    },
+    "MyCompany.MyApp.Domain": {
+      "path": "src/MyCompany.MyApp.Domain/MyCompany.MyApp.Domain.abppkg",
+      "folder": "src"
+    }
+  }
+}
