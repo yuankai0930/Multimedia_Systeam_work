@@ -217,6 +217,11 @@ UpgradeLog*.htm
 *.bim.layout
 *.bim_*.settings
 
+# Local environment secrets
+.env
+.env.*
+!.env.example
+
 # Microsoft Fakes
 FakesAssemblies/
 

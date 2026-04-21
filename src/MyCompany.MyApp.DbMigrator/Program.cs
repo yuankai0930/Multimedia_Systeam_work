@@ -1,4 +1,6 @@
 ﻿using System.Threading.Tasks;
+using System;
+using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -11,6 +13,8 @@ class Program
 {
     static async Task Main(string[] args)
     {
+        LoadDotEnv();
+
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Information()
             .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
@@ -36,4 +40,38 @@ class Program
             {
                 services.AddHostedService<DbMigratorHostedService>();
             });
+
+    private static void LoadDotEnv()
+    {
+        var current = new DirectoryInfo(Directory.GetCurrentDirectory());
+        while (current != null)
+        {
+            var envFilePath = Path.Combine(current.FullName, ".env");
+            if (File.Exists(envFilePath))
+            {
+                foreach (var rawLine in File.ReadAllLines(envFilePath))
+                {
+                    var line = rawLine.Trim();
+                    if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#") || !line.Contains('='))
+                    {
+                        continue;
+                    }
+
+                    var index = line.IndexOf('=');
+                    var key = line[..index].Trim();
+                    var value = line[(index + 1)..].Trim().Trim('"');
+                    if (string.IsNullOrWhiteSpace(key) || !string.IsNullOrEmpty(Environment.GetEnvironmentVariable(key)))
+                    {
+                        continue;
+                    }
+
+                    Environment.SetEnvironmentVariable(key, value);
+                }
+
+                return;
+            }
+
+            current = current.Parent;
+        }
+    }
 }

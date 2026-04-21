@@ -1,0 +1,91 @@
+<div class="container my-4">
+  <div class="row">
+    <!-- 左側：主要圖片展示區 -->
+    <div class="col-lg-8">
+      <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h3 class="mb-0">
+            <i class="fa fa-star me-2"></i>NASA 每日天文圖片
+          </h3>
+          <button
+            class="btn btn-primary"
+            (click)="fetchToday()"
+            [disabled]="isFetching"
+          >
+            <i class="fa fa-download me-1"></i>
+            {{ isFetching ? '抓取中...' : '抓取今日圖片' }}
+          </button>
+        </div>
+
+        <div class="card-body">
+          <!-- 錯誤訊息 -->
+          @if (errorMessage) {
+            <div class="alert alert-danger">{{ errorMessage }}</div>
+          }
+
+          <!-- 載入中 -->
+          @if (isLoading) {
+            <div class="text-center py-5">
+              <div class="spinner-border text-primary" role="status"></div>
+              <p class="mt-2 text-muted">載入中...</p>
+            </div>
+          }
+
+          <!-- 顯示圖片 -->
+          @if (!isLoading && apodData) {
+            <h2 class="mb-1">{{ apodData.title }}</h2>
+            <small class="text-muted">{{ apodData.date }}</small>
+
+            <div class="my-3">
+              <img
+                [src]="apodData.url"
+                [alt]="apodData.title"
+                class="img-fluid rounded w-100"
+                style="max-height: 500px; object-fit: cover;"
+              />
+            </div>
+
+            <p class="lead text-muted">{{ apodData.explanation }}</p>
+          }
+
+          <!-- 尚無資料 -->
+          @if (!isLoading && !apodData) {
+            <div class="text-center py-5 text-muted">
+              <i class="fa fa-rocket fa-3x mb-3 d-block"></i>
+              <p>尚無資料，請點擊「抓取今日圖片」開始。</p>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- 右側：歷史記錄清單 -->
+    <div class="col-lg-4 mt-4 mt-lg-0">
+      <div class="card shadow-sm">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="fa fa-history me-2"></i>歷史記錄（{{ savedList.length }} 筆）
+          </h5>
+        </div>
+        <div class="card-body p-0">
+          @if (savedList.length === 0) {
+            <p class="text-muted text-center py-4">尚無歷史資料</p>
+          }
+          <ul class="list-group list-group-flush">
+            @for (item of savedList; track item.date) {
+              <li
+                class="list-group-item list-group-item-action"
+                [class.active]="apodData?.date === item.date"
+                (click)="selectImage(item)"
+                style="cursor: pointer;"
+              >
+                <div class="fw-bold">{{ item.title }}</div>
+                <small class="text-muted">{{ item.date }}</small>
+              </li>
+            }
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

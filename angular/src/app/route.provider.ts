@@ -15,6 +15,13 @@ function configureRoutes(routes: RoutesService) {
         order: 1,
         layout: eLayoutType.application,
       },
+      {
+        path: '/apod',
+        name: '每日天文圖片',
+        iconClass: 'fas fa-star',
+        order: 2,
+        layout: eLayoutType.application,
+      },
     ]);
   };
 }

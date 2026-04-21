@@ -117,6 +117,9 @@ public class MyAppHttpApiHostModule : AbpModule
         ConfigureSwagger(context, configuration);
         ConfigureVirtualFileSystem(context);
         ConfigureCors(context, configuration);
+
+        // 註冊 HttpClient，供 ApodAppService 呼叫 NASA API 使用
+        context.Services.AddHttpClient();
     }
 
     private void ConfigureAuthentication(ServiceConfigurationContext context)

@@ -26,6 +26,10 @@ const routes: Routes = [
     loadChildren: () =>
       import('@abp/ng.setting-management').then(m => m.SettingManagementModule.forLazy()),
   },
+  {
+    path: 'apod',
+    loadChildren: () => import('./apod/apod.module').then(m => m.ApodModule),
+  },
 ];
 
 @NgModule({
