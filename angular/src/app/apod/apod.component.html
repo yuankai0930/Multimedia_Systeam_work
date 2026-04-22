@@ -37,12 +37,38 @@
             <small class="text-muted">{{ apodData.date }}</small>
 
             <div class="my-3">
-              <img
-                [src]="apodData.url"
-                [alt]="apodData.title"
-                class="img-fluid rounded w-100"
-                style="max-height: 500px; object-fit: cover;"
-              />
+              @if (isImage(apodData)) {
+                <img
+                  [src]="apodData.url"
+                  [alt]="apodData.title"
+                  class="img-fluid rounded w-100"
+                  style="max-height: 500px; object-fit: cover;"
+                />
+              }
+
+              @if (isVideo(apodData)) {
+                @if (getVideoEmbedUrl(apodData); as embedUrl) {
+                  <div class="ratio ratio-16x9 rounded overflow-hidden">
+                    <iframe
+                      [src]="embedUrl"
+                      [title]="apodData.title"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowfullscreen
+                    ></iframe>
+                  </div>
+                } @else {
+                  <div class="alert alert-warning mb-0">
+                    此影片來源目前不支援內嵌播放。
+                    <a [href]="apodData.url" target="_blank" rel="noopener noreferrer">點此開啟原始連結</a>
+                  </div>
+                }
+              }
+
+              @if (!isImage(apodData) && !isVideo(apodData)) {
+                <div class="alert alert-secondary mb-0">
+                  此媒體型態暫不支援顯示。
+                </div>
+              }
             </div>
 
             <p class="lead text-muted">{{ apodData.explanation }}</p>

@@ -11,32 +11,38 @@ public class ApodImage : Entity<Guid>
     /// <summary>
     /// 圖片日期（格式：yyyy-MM-dd）
     /// </summary>
-    public string Date { get; set; }
+    public string Date { get; set; } = null!;
 
     /// <summary>
     /// 圖片標題
     /// </summary>
-    public string Title { get; set; }
+    public string Title { get; set; } = null!;
 
     /// <summary>
     /// 圖片說明
     /// </summary>
-    public string Explanation { get; set; }
+    public string Explanation { get; set; } = null!;
+
+    /// <summary>
+    /// 媒體型態（例如：image、video）
+    /// </summary>
+    public string MediaType { get; set; } = null!;
 
     /// <summary>
     /// 圖片或媒體的網址
     /// </summary>
-    public string Url { get; set; }
+    public string Url { get; set; } = null!;
 
     // 供 EF Core 使用的無參數建構子
     protected ApodImage() { }
 
-    public ApodImage(Guid id, string date, string title, string explanation, string url)
+    public ApodImage(Guid id, string date, string title, string explanation, string mediaType, string url)
         : base(id)
     {
         Date = date;
         Title = title;
         Explanation = explanation;
+        MediaType = mediaType;
         Url = url;
     }
 }
