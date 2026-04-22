@@ -90,6 +90,7 @@ public class MyAppDbContext :
             b.Property(x => x.Date).IsRequired().HasMaxLength(20);
             b.Property(x => x.Title).IsRequired().HasMaxLength(256);
             b.Property(x => x.Explanation).IsRequired().HasMaxLength(4000);
+            b.Property(x => x.MediaType).IsRequired().HasMaxLength(20);
             b.Property(x => x.Url).IsRequired().HasMaxLength(512);
         });
     }

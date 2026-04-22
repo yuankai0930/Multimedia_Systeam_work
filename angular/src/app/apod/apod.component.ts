@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ApodService, ApodImageDto } from './apod.service';
 
 @Component({
@@ -13,7 +14,10 @@ export class ApodComponent implements OnInit {
   isFetching = false;
   errorMessage = '';
 
-  constructor(private apodService: ApodService) {}
+  constructor(
+    private apodService: ApodService,
+    private sanitizer: DomSanitizer
+  ) {}
 
   ngOnInit(): void {
     this.loadList();
@@ -58,5 +62,72 @@ export class ApodComponent implements OnInit {
   /** 點選歷史清單中的圖片 */
   selectImage(item: ApodImageDto): void {
     this.apodData = item;
+  }
+
+  isImage(item: ApodImageDto): boolean {
+    return this.resolveMediaType(item) === 'image';
+  }
+
+  isVideo(item: ApodImageDto): boolean {
+    return this.resolveMediaType(item) === 'video';
+  }
+
+  getVideoEmbedUrl(item: ApodImageDto): SafeResourceUrl | null {
+    if (!this.isVideo(item)) {
+      return null;
+    }
+
+    const embedUrl = this.toEmbedUrl(item.url);
+    return embedUrl ? this.sanitizer.bypassSecurityTrustResourceUrl(embedUrl) : null;
+  }
+
+  private resolveMediaType(item: ApodImageDto): string {
+    const mediaType = item.mediaType?.trim().toLowerCase();
+    if (mediaType === 'image' || mediaType === 'video') {
+      return mediaType;
+    }
+
+    return this.isKnownVideoUrl(item.url) ? 'video' : 'image';
+  }
+
+  private isKnownVideoUrl(url: string): boolean {
+    return /youtube\.com|youtu\.be|vimeo\.com/i.test(url);
+  }
+
+  private toEmbedUrl(url: string): string | null {
+    try {
+      const parsed = new URL(url);
+      const host = parsed.hostname.toLowerCase();
+
+      if (host.includes('youtu.be')) {
+        const id = parsed.pathname.split('/').filter(Boolean)[0];
+        return id ? `https://www.youtube.com/embed/${id}` : null;
+      }
+
+      if (host.includes('youtube.com')) {
+        if (parsed.pathname === '/watch') {
+          const id = parsed.searchParams.get('v');
+          return id ? `https://www.youtube.com/embed/${id}` : null;
+        }
+
+        if (parsed.pathname.startsWith('/embed/')) {
+          return `https://www.youtube.com${parsed.pathname}`;
+        }
+
+        if (parsed.pathname.startsWith('/shorts/')) {
+          const id = parsed.pathname.split('/')[2];
+          return id ? `https://www.youtube.com/embed/${id}` : null;
+        }
+      }
+
+      if (host.includes('vimeo.com')) {
+        const id = parsed.pathname.split('/').filter(Boolean)[0];
+        return id ? `https://player.vimeo.com/video/${id}` : null;
+      }
+
+      return null;
+    } catch {
+      return null;
+    }
   }
 }

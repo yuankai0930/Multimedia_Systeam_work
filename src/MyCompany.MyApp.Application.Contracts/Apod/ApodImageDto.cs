@@ -8,5 +8,6 @@ public class ApodImageDto
     public string Date { get; set; } = null!;
     public string Title { get; set; } = null!;
     public string Explanation { get; set; } = null!;
+    public string MediaType { get; set; } = null!;
     public string Url { get; set; } = null!;
 }

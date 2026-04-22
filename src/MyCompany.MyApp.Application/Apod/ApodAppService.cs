@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -44,7 +45,8 @@ public class ApodAppService : MyAppAppService, IApodAppService
         response.EnsureSuccessStatusCode();
 
         var json = await response.Content.ReadAsStringAsync();
-        var nasaData = JsonSerializer.Deserialize<NasaApodResponse>(json);
+        var nasaData = JsonSerializer.Deserialize<NasaApodResponse>(json)
+            ?? throw new InvalidOperationException("NASA APOD API returned an invalid payload.");
 
         // 若今天的資料已存在，直接回傳，避免重複儲存
         var existing = await _apodRepository.FindAsync(x => x.Date == nasaData.Date);
@@ -58,6 +60,7 @@ public class ApodAppService : MyAppAppService, IApodAppService
             nasaData.Date,
             nasaData.Title,
             nasaData.Explanation,
+            NormalizeMediaType(nasaData.MediaType, nasaData.Url),
             nasaData.Url
         );
 
@@ -87,8 +90,25 @@ public class ApodAppService : MyAppAppService, IApodAppService
             Date = entity.Date,
             Title = entity.Title,
             Explanation = entity.Explanation,
+            MediaType = entity.MediaType,
             Url = entity.Url
         };
+    }
+
+    private static string NormalizeMediaType(string? mediaType, string? url)
+    {
+        var normalized = mediaType?.Trim().ToLowerInvariant();
+        if (normalized == "image" || normalized == "video")
+        {
+            return normalized;
+        }
+
+        if (!string.IsNullOrWhiteSpace(url) && Regex.IsMatch(url, @"(youtube\.com|youtu\.be|vimeo\.com)", RegexOptions.IgnoreCase))
+        {
+            return "video";
+        }
+
+        return "image";
     }
 
     private string ResolveNasaApiKey()
@@ -107,15 +127,18 @@ public class ApodAppService : MyAppAppService, IApodAppService
     private class NasaApodResponse
     {
         [JsonPropertyName("date")]
-        public string Date { get; set; }
+        public string Date { get; set; } = string.Empty;
 
         [JsonPropertyName("title")]
-        public string Title { get; set; }
+        public string Title { get; set; } = string.Empty;
 
         [JsonPropertyName("explanation")]
-        public string Explanation { get; set; }
+        public string Explanation { get; set; } = string.Empty;
 
         [JsonPropertyName("url")]
-        public string Url { get; set; }
+        public string Url { get; set; } = string.Empty;
+
+        [JsonPropertyName("media_type")]
+        public string? MediaType { get; set; }
     }
 }

@@ -7,6 +7,7 @@ export interface ApodImageDto {
   date: string;
   title: string;
   explanation: string;
+  mediaType: string;
   url: string;
 }
 

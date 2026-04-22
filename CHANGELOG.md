@@ -5,6 +5,20 @@
 
 ---
 
+## [1.2.1] - 2026-04-22
+
+### 修正
+- **APOD 顯示問題**：修正 NASA APOD 回傳影片網址（如 YouTube）時前端以圖片渲染造成破圖/空白的問題，改為依 `MediaType` 分流顯示（image/video）
+- **Application 層**：`ApodAppService` 新增 `media_type` 解析與回傳，並加入媒體型態正規化與影片網址 fallback 判斷
+- **Domain / DTO**：`ApodImage` 與 `ApodImageDto` 新增 `MediaType` 欄位，確保前後端資料一致
+- **EF Core**：`MyAppDbContext` 補上 `MediaType` 欄位映射，與既有 Migration `AddApodMediaType` 對齊
+- **Angular 前端**：`apod.component` 新增影片嵌入顯示（YouTube/Vimeo 轉 embed URL）與不支援媒體提示，避免頁面空白
+
+### 維運
+- **資料庫升級**：確認需執行 `DbMigrator` 套用 `AddApodMediaType`，否則會出現 `Invalid column name 'MediaType'`
+
+---
+
 ## [1.2.0] - 2026-04-21
 
 ### 新增
