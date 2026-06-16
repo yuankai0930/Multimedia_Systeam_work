@@ -5,6 +5,28 @@
 
 ---
 
+## [1.4.0] - 2026-06-16
+
+### 新增
+- **歷史管理 - 刪除**：新增 `DELETE /api/app/apod/history/{id}` 端點，使用者可刪除單筆查詢記錄（硬刪除，無法復原）
+- **歷史管理 - 收藏**：新增 `POST /api/app/apod/history/{id}/toggle-starred` 端點，使用者可標星/取消標星記錄，標星項目自動移至清單頂部
+- **歷史管理 - 排序**：新增 `POST /api/app/apod/history/reorder-starred` 端點，使用者可在「我的收藏」區拖曳手動調整標星項目順序
+- **前端元件**：Angular 元件新增星號按鈕、刪除按鈕、拖曳排序功能（使用 @angular/cdk）
+- **雙區域歷史檢視**：APOD 頁面新增「我的收藏」與「其他查詢」兩區，標星項目優先顯示
+- **資料庫欄位**：`AppApodQueryHistories` 表新增 `IsStarred` (bit) 與 `PinnedOrder` (int?) 欄位，支援標星狀態與手動排序
+- **複合索引**：優化資料庫索引從 (UserId, QueryTime) 改為 (UserId, IsStarred, QueryTime)，提升標星排序查詢效能
+
+### 修改
+- **授權強化**：所有歷史管理操作（刪除、標星、排序）在應用層加入 `[Authorize]` 屬性與使用者所有權驗證
+- **排序邏輯**：`GetMyHistoryAsync` 回傳排序改為 IsStarred DESC → PinnedOrder ASC → QueryTime DESC，前端分區展示
+- **前端路由保護**：APOD 模組路由加入 AuthGuard 確保未登入使用者無法進入
+
+### 維運
+- **Migration 套用**：新增並套用 `20260616120000_AddHistoryStarredAndPinnedOrder`，確保新欄位與索引可正常運作
+- **GitIgnore 更新**：package.json 顯式聲明 `@angular/cdk` 版本 ~18.1.0
+
+---
+
 ## [1.3.0] - 2026-06-16
 
 ### 新增
