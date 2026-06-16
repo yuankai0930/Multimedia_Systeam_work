@@ -7,17 +7,40 @@
           <h3 class="mb-0">
             <i class="fa fa-star me-2"></i>NASA 每日天文圖片
           </h3>
-          <button
-            class="btn btn-primary"
-            (click)="fetchToday()"
-            [disabled]="isFetching"
-          >
-            <i class="fa fa-download me-1"></i>
-            {{ isFetching ? '抓取中...' : '抓取今日圖片' }}
-          </button>
         </div>
 
         <div class="card-body">
+          <div class="row g-2 align-items-end mb-3">
+            <div class="col-md-5">
+              <label class="form-label">查詢日期</label>
+              <input
+                class="form-control"
+                type="date"
+                [(ngModel)]="selectedDate"
+                [max]="maxDate"
+              />
+            </div>
+            <div class="col-md-auto">
+              <button
+                class="btn btn-primary w-100"
+                (click)="searchBySelectedDate()"
+                [disabled]="isFetching"
+              >
+                <i class="fa fa-search me-1"></i>
+                {{ isFetching ? '查詢中...' : '查詢指定日期' }}
+              </button>
+            </div>
+            <div class="col-md-auto">
+              <button
+                class="btn btn-outline-primary w-100"
+                (click)="fetchToday()"
+                [disabled]="isFetching"
+              >
+                <i class="fa fa-calendar me-1"></i>今天
+              </button>
+            </div>
+          </div>
+
           <!-- 錯誤訊息 -->
           @if (errorMessage) {
             <div class="alert alert-danger">{{ errorMessage }}</div>
@@ -85,28 +108,32 @@
       </div>
     </div>
 
-    <!-- 右側：歷史記錄清單 -->
+    <!-- 右側：我的查詢歷史 -->
     <div class="col-lg-4 mt-4 mt-lg-0">
       <div class="card shadow-sm">
         <div class="card-header">
           <h5 class="mb-0">
-            <i class="fa fa-history me-2"></i>歷史記錄（{{ savedList.length }} 筆）
+            <i class="fa fa-history me-2"></i>我的查詢歷史（{{ historyList.length }} 筆）
           </h5>
         </div>
         <div class="card-body p-0">
-          @if (savedList.length === 0) {
+          @if (isHistoryLoading) {
+            <p class="text-muted text-center py-4">載入歷史中...</p>
+          }
+          @if (!isHistoryLoading && historyList.length === 0) {
             <p class="text-muted text-center py-4">尚無歷史資料</p>
           }
           <ul class="list-group list-group-flush">
-            @for (item of savedList; track item.date) {
+            @for (item of historyList; track item.queryTime) {
               <li
                 class="list-group-item list-group-item-action"
                 [class.active]="apodData?.date === item.date"
-                (click)="selectImage(item)"
+                (click)="selectHistory(item)"
                 style="cursor: pointer;"
               >
                 <div class="fw-bold">{{ item.title }}</div>
-                <small class="text-muted">{{ item.date }}</small>
+                <small class="text-muted d-block">{{ item.date }}</small>
+                <small class="text-muted">查詢時間：{{ item.queryTime | date: 'yyyy-MM-dd HH:mm' }}</small>
               </li>
             }
           </ul>

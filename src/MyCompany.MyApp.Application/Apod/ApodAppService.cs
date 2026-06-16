@@ -1,33 +1,45 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Users;
 
 namespace MyCompany.MyApp.Apod;
 
 /// <summary>
 /// APOD 應用服務：負責從 NASA API 抓取資料並存入資料庫。
 /// </summary>
+[Authorize]
 public class ApodAppService : MyAppAppService, IApodAppService
 {
     private const string DefaultNasaApiKey = "DEMO_KEY";
+    private const string ApodDateFormat = "yyyy-MM-dd";
+    private static readonly DateOnly ApodEarliestDate = new(1995, 6, 16);
 
     private readonly IRepository<ApodImage, Guid> _apodRepository;
+    private readonly IRepository<ApodQueryHistory, Guid> _apodQueryHistoryRepository;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IConfiguration _configuration;
 
     public ApodAppService(
         IRepository<ApodImage, Guid> apodRepository,
+        IRepository<ApodQueryHistory, Guid> apodQueryHistoryRepository,
         IHttpClientFactory httpClientFactory,
         IConfiguration configuration)
     {
         _apodRepository = apodRepository;
+        _apodQueryHistoryRepository = apodQueryHistoryRepository;
         _httpClientFactory = httpClientFactory;
         _configuration = configuration;
     }
@@ -37,34 +49,19 @@ public class ApodAppService : MyAppAppService, IApodAppService
     /// </summary>
     public async Task<ApodImageDto> FetchAndSaveAsync()
     {
-        var apiKey = ResolveNasaApiKey();
-        var url = $"https://api.nasa.gov/planetary/apod?api_key={apiKey}";
+        var today = DateOnly.FromDateTime(DateTime.UtcNow).ToString(ApodDateFormat, CultureInfo.InvariantCulture);
+        return await GetByDateAsync(today);
+    }
 
-        var client = _httpClientFactory.CreateClient();
-        var response = await client.GetAsync(url);
-        response.EnsureSuccessStatusCode();
+    /// <summary>
+    /// 依指定日期取得 APOD，若資料庫中不存在則從 NASA API 抓取後保存。
+    /// </summary>
+    public async Task<ApodImageDto> GetByDateAsync(string date)
+    {
+        var normalizedDate = NormalizeDate(date);
+        var entity = await GetOrFetchByDateAsync(normalizedDate);
 
-        var json = await response.Content.ReadAsStringAsync();
-        var nasaData = JsonSerializer.Deserialize<NasaApodResponse>(json)
-            ?? throw new InvalidOperationException("NASA APOD API returned an invalid payload.");
-
-        // 若今天的資料已存在，直接回傳，避免重複儲存
-        var existing = await _apodRepository.FindAsync(x => x.Date == nasaData.Date);
-        if (existing != null)
-        {
-            return MapToDto(existing);
-        }
-
-        var entity = new ApodImage(
-            GuidGenerator.Create(),
-            nasaData.Date,
-            nasaData.Title,
-            nasaData.Explanation,
-            NormalizeMediaType(nasaData.MediaType, nasaData.Url),
-            nasaData.Url
-        );
-
-        await _apodRepository.InsertAsync(entity, autoSave: true);
+        await RecordQueryAsync(entity, normalizedDate);
 
         return MapToDto(entity);
     }
@@ -83,6 +80,143 @@ public class ApodAppService : MyAppAppService, IApodAppService
         return result;
     }
 
+    /// <summary>
+    /// 取得目前登入使用者的 APOD 查詢歷史。
+    /// </summary>
+    public async Task<List<ApodQueryHistoryDto>> GetMyHistoryAsync()
+    {
+        var userId = CurrentUser.GetId();
+        var histories = await _apodQueryHistoryRepository.GetListAsync(x => x.UserId == userId);
+        var orderedHistories = histories
+            .OrderByDescending(x => x.QueryTime)
+            .ToList();
+
+        if (orderedHistories.Count == 0)
+        {
+            return new List<ApodQueryHistoryDto>();
+        }
+
+        var imageIds = orderedHistories
+            .Select(x => x.ApodImageId)
+            .Distinct()
+            .ToList();
+
+        var images = await _apodRepository.GetListAsync(x => imageIds.Contains(x.Id));
+        var imageMap = images.ToDictionary(x => x.Id);
+
+        return orderedHistories
+            .Where(x => imageMap.ContainsKey(x.ApodImageId))
+            .Select(x => MapHistoryToDto(x, imageMap[x.ApodImageId]))
+            .ToList();
+    }
+
+    private async Task<ApodImage> GetOrFetchByDateAsync(string normalizedDate)
+    {
+        var existing = await _apodRepository.FindAsync(x => x.Date == normalizedDate);
+        if (existing != null)
+        {
+            return existing;
+        }
+
+        var nasaData = await FetchApodAsync(normalizedDate);
+        var entity = new ApodImage(
+            GuidGenerator.Create(),
+            nasaData.Date,
+            nasaData.Title,
+            nasaData.Explanation,
+            NormalizeMediaType(nasaData.MediaType, nasaData.Url),
+            nasaData.Url
+        );
+
+        await _apodRepository.InsertAsync(entity, autoSave: true);
+
+        return entity;
+    }
+
+    private async Task<NasaApodResponse> FetchApodAsync(string normalizedDate)
+    {
+        var apiKey = ResolveNasaApiKey();
+        var url = $"https://api.nasa.gov/planetary/apod?api_key={apiKey}&date={Uri.EscapeDataString(normalizedDate)}";
+
+        var client = _httpClientFactory.CreateClient();
+        var response = await client.GetAsync(url);
+        var json = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            if (TryGetNoDataReason(response.StatusCode, normalizedDate, json, out var noDataReason))
+            {
+                throw new UserFriendlyException(noDataReason);
+            }
+
+            if (response.StatusCode == HttpStatusCode.ServiceUnavailable)
+            {
+                throw new UserFriendlyException("NASA 服務暫時不可用，請稍後再試。");
+            }
+
+            if (response.StatusCode == HttpStatusCode.TooManyRequests)
+            {
+                throw new UserFriendlyException("NASA API 請求次數過多，請稍後再試。");
+            }
+
+            throw new HttpRequestException(
+                $"NASA APOD API returned {(int)response.StatusCode} ({response.StatusCode}).",
+                null,
+                response.StatusCode
+            );
+        }
+
+        return JsonSerializer.Deserialize<NasaApodResponse>(json)
+            ?? throw new InvalidOperationException("NASA APOD API returned an invalid payload.");
+    }
+
+    private static bool TryGetNoDataReason(HttpStatusCode statusCode, string normalizedDate, string payload, out string reason)
+    {
+        reason = string.Empty;
+
+        if (statusCode == HttpStatusCode.NotFound)
+        {
+            reason = $"你選擇的日期 {normalizedDate} 查無 APOD 資料。";
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(payload))
+        {
+            reason = $"你選擇的日期 {normalizedDate} 查無 APOD 資料。";
+            return false;
+        }
+
+        if (payload.Contains("Date must be between", StringComparison.OrdinalIgnoreCase)
+            || payload.Contains("out of range", StringComparison.OrdinalIgnoreCase))
+        {
+            var latestDate = DateOnly.FromDateTime(DateTime.UtcNow).ToString(ApodDateFormat, CultureInfo.InvariantCulture);
+            var earliestDate = ApodEarliestDate.ToString(ApodDateFormat, CultureInfo.InvariantCulture);
+            reason = $"你選擇的日期超出可查詢範圍，APOD 目前僅支援 {earliestDate} 到 {latestDate}。";
+            return true;
+        }
+
+        if (payload.Contains("No data available for date", StringComparison.OrdinalIgnoreCase))
+        {
+            reason = $"你選擇的日期 {normalizedDate} 尚未發布 APOD 內容。";
+            return true;
+        }
+
+        return false;
+    }
+
+    private async Task RecordQueryAsync(ApodImage entity, string normalizedDate)
+    {
+        var history = new ApodQueryHistory(
+            GuidGenerator.Create(),
+            CurrentUser.GetId(),
+            entity.Id,
+            normalizedDate,
+            DateTime.UtcNow
+        );
+
+        await _apodQueryHistoryRepository.InsertAsync(history, autoSave: true);
+    }
+
     private static ApodImageDto MapToDto(ApodImage entity)
     {
         return new ApodImageDto
@@ -93,6 +227,37 @@ public class ApodAppService : MyAppAppService, IApodAppService
             MediaType = entity.MediaType,
             Url = entity.Url
         };
+    }
+
+    private static ApodQueryHistoryDto MapHistoryToDto(ApodQueryHistory history, ApodImage entity)
+    {
+        return new ApodQueryHistoryDto
+        {
+            Date = entity.Date,
+            Title = entity.Title,
+            Explanation = entity.Explanation,
+            MediaType = entity.MediaType,
+            Url = entity.Url,
+            QueryTime = history.QueryTime
+        };
+    }
+
+    private static string NormalizeDate(string date)
+    {
+        if (!DateOnly.TryParseExact(date, ApodDateFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDate))
+        {
+            throw new UserFriendlyException("日期格式錯誤，請使用 yyyy-MM-dd。", nameof(date));
+        }
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        if (parsedDate < ApodEarliestDate || parsedDate > today)
+        {
+            var earliestDate = ApodEarliestDate.ToString(ApodDateFormat, CultureInfo.InvariantCulture);
+            var latestDate = today.ToString(ApodDateFormat, CultureInfo.InvariantCulture);
+            throw new UserFriendlyException($"日期超出可查詢範圍，請選擇 {earliestDate} 到 {latestDate}。", nameof(date));
+        }
+
+        return parsedDate.ToString(ApodDateFormat, CultureInfo.InvariantCulture);
     }
 
     private static string NormalizeMediaType(string? mediaType, string? url)

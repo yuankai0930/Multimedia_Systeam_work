@@ -77,6 +77,37 @@ work01/
 
 ## 設定說明
 
+## APOD 功能說明
+
+NASA 每日天文圖片（APOD）功能目前支援以下流程：
+
+1. 使用者需先登入後，才能進入 APOD 頁面與執行查詢。
+2. 使用者可依指定日期查詢 APOD。
+3. 系統會先查詢本地資料庫，若該日期資料已存在，直接回傳本地資料，不再呼叫 NASA API。
+4. 若本地尚無資料，系統才會向 NASA APOD API 抓取，並寫入資料庫供後續重用。
+5. 每位使用者的查詢歷史會個別保存，可於 APOD 頁面查看自己的歷史紀錄。
+
+### APOD 錯誤與無資料提示
+
+當使用者選擇的日期無法顯示時，系統會回傳可理解原因，而非僅顯示泛用錯誤：
+
+- 日期格式錯誤：提示使用 `yyyy-MM-dd`
+- 日期超出範圍：提示 APOD 可查詢區間（1995-06-16 到今天）
+- 該日期尚未發布或查無資料：提示「該日期沒有 APOD 資料」
+- NASA 服務暫時不可用（503）：提示稍後再試
+- API 請求過多（429）：提示稍後再試
+
+前端會直接顯示後端回傳原因，若為無資料情境會清空舊內容，避免誤判為查詢成功。
+
+### APOD 主要 API
+
+- `GET /api/app/apod/by-date?date=yyyy-MM-dd`：查詢指定日期 APOD（需登入）
+- `GET /api/app/apod/my-history`：取得目前登入使用者的查詢歷史
+- `POST /api/app/apod/fetch-and-save`：查詢今天 APOD（內部改走指定日期查詢流程）
+- `GET /api/app/apod`：取得資料庫已儲存的 APOD 清單
+
+---
+
 ### 資料庫連線字串
 
 請分別在以下兩個專案的 `appsettings.json` 中確認並修改 `ConnectionStrings`：
@@ -152,6 +183,30 @@ cd angular
 npm install
 npm start
 ```
+
+---
+
+## 任務管理
+
+本專案已建立專用任務區，供後續新功能、修復項目與維運工作集中管理。
+
+### 任務區位置
+
+- [tasks/README.md](tasks/README.md)：任務區說明與使用規則
+- [tasks/todo-list.md](tasks/todo-list.md)：待辦任務總覽
+- [tasks/done-list.md](tasks/done-list.md)：已完成任務總覽
+- [tasks/todo](tasks/todo)：待辦任務明細檔
+- [tasks/done](tasks/done)：已完成任務明細檔
+- [tasks/_template.md](tasks/_template.md)：新任務模板
+
+### 使用方式
+
+1. 有新功能或修復需求時，在 `tasks/todo/` 建立一份任務檔。
+2. 建議檔名格式使用 `yyyymmdd-功能名稱.md`。
+3. 同步在 [tasks/todo-list.md](tasks/todo-list.md) 新增一筆連結。
+4. 任務完成後，將任務檔移到 `tasks/done/`，並更新 [tasks/todo-list.md](tasks/todo-list.md) 與 [tasks/done-list.md](tasks/done-list.md)。
+
+> `CHANGELOG.md` 只保留版本變更紀錄，不作為待辦任務區使用。
 
 ---
 

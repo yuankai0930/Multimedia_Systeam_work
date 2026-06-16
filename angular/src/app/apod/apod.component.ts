@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { ApodService, ApodImageDto } from './apod.service';
+import { ApodService, ApodImageDto, ApodQueryHistoryDto } from './apod.service';
 
 @Component({
   selector: 'app-apod',
@@ -9,8 +9,11 @@ import { ApodService, ApodImageDto } from './apod.service';
 })
 export class ApodComponent implements OnInit {
   apodData: ApodImageDto | null = null;
-  savedList: ApodImageDto[] = [];
+  historyList: ApodQueryHistoryDto[] = [];
+  selectedDate = this.getTodayString();
+  maxDate = this.getTodayString();
   isLoading = false;
+  isHistoryLoading = false;
   isFetching = false;
   errorMessage = '';
 
@@ -20,48 +23,72 @@ export class ApodComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadList();
+    this.loadHistory();
   }
 
   /** 呼叫後端，從 NASA 抓取今日圖片並存入資料庫 */
   fetchToday(): void {
+    this.selectedDate = this.maxDate;
+    this.searchBySelectedDate();
+  }
+
+  searchBySelectedDate(): void {
+    if (!this.selectedDate) {
+      this.errorMessage = '請先選擇日期。';
+      return;
+    }
+
     this.isFetching = true;
+    this.isLoading = true;
     this.errorMessage = '';
-    this.apodService.fetchAndSave().subscribe({
+    this.apodService.getByDate(this.selectedDate).subscribe({
       next: (data) => {
         this.apodData = data;
         this.isFetching = false;
-        this.loadList();
+        this.isLoading = false;
+        this.loadHistory();
       },
       error: (err) => {
-        this.errorMessage = '抓取失敗，請確認後端服務是否啟動。';
+        const serverMessage = err?.error?.error?.message;
+        this.errorMessage =
+          typeof serverMessage === 'string' && serverMessage.trim().length > 0
+            ? serverMessage
+            : '查詢失敗，請確認日期格式正確且後端服務已啟動。';
+
+        if (this.errorMessage.includes('沒有 APOD 資料')) {
+          this.apodData = null;
+        }
+
         this.isFetching = false;
+        this.isLoading = false;
         console.error(err);
       },
     });
   }
 
-  /** 載入資料庫中所有已儲存的圖片 */
-  loadList(): void {
-    this.isLoading = true;
-    this.apodService.getList().subscribe({
+  /** 載入目前登入使用者的查詢歷史 */
+  loadHistory(): void {
+    this.isHistoryLoading = true;
+    this.apodService.getMyHistory().subscribe({
       next: (list) => {
-        this.savedList = list;
-        if (list.length > 0) {
-          this.apodData = list[list.length - 1];
+        this.historyList = list;
+        if (!this.apodData && list.length > 0) {
+          this.apodData = this.toApodImage(list[0]);
+          this.selectedDate = list[0].date;
         }
-        this.isLoading = false;
+        this.isHistoryLoading = false;
       },
       error: (err) => {
-        this.isLoading = false;
+        this.isHistoryLoading = false;
         console.error(err);
       },
     });
   }
 
   /** 點選歷史清單中的圖片 */
-  selectImage(item: ApodImageDto): void {
-    this.apodData = item;
+  selectHistory(item: ApodQueryHistoryDto): void {
+    this.apodData = this.toApodImage(item);
+    this.selectedDate = item.date;
   }
 
   isImage(item: ApodImageDto): boolean {
@@ -92,6 +119,20 @@ export class ApodComponent implements OnInit {
 
   private isKnownVideoUrl(url: string): boolean {
     return /youtube\.com|youtu\.be|vimeo\.com/i.test(url);
+  }
+
+  private toApodImage(item: ApodQueryHistoryDto): ApodImageDto {
+    return {
+      date: item.date,
+      title: item.title,
+      explanation: item.explanation,
+      mediaType: item.mediaType,
+      url: item.url,
+    };
+  }
+
+  private getTodayString(): string {
+    return new Date().toISOString().slice(0, 10);
   }
 
   private toEmbedUrl(url: string): string | null {

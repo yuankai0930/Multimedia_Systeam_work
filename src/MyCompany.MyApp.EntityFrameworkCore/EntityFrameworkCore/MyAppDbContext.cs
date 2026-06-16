@@ -29,6 +29,7 @@ public class MyAppDbContext :
     /* Add DbSet properties for your Aggregate Roots / Entities here. */
 
     public DbSet<ApodImage> ApodImages { get; set; }
+    public DbSet<ApodQueryHistory> ApodQueryHistories { get; set; }
 
     #region Entities from the modules
 
@@ -92,6 +93,19 @@ public class MyAppDbContext :
             b.Property(x => x.Explanation).IsRequired().HasMaxLength(4000);
             b.Property(x => x.MediaType).IsRequired().HasMaxLength(20);
             b.Property(x => x.Url).IsRequired().HasMaxLength(512);
+            b.HasIndex(x => x.Date).IsUnique();
+        });
+
+        builder.Entity<ApodQueryHistory>(b =>
+        {
+            b.ToTable(MyAppConsts.DbTablePrefix + "ApodQueryHistories", MyAppConsts.DbSchema);
+            b.ConfigureByConvention();
+            b.Property(x => x.UserId).IsRequired();
+            b.Property(x => x.ApodImageId).IsRequired();
+            b.Property(x => x.ApodDate).IsRequired().HasMaxLength(20);
+            b.Property(x => x.QueryTime).IsRequired();
+            b.HasIndex(x => new { x.UserId, x.QueryTime });
+            b.HasIndex(x => x.ApodImageId);
         });
     }
 }

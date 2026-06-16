@@ -28,6 +28,7 @@ const routes: Routes = [
   },
   {
     path: 'apod',
+    canActivate: [authGuard],
     loadChildren: () => import('./apod/apod.module').then(m => m.ApodModule),
   },
 ];
