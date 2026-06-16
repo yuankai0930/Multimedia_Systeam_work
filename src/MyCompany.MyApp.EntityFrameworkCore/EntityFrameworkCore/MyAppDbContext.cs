@@ -104,7 +104,9 @@ public class MyAppDbContext :
             b.Property(x => x.ApodImageId).IsRequired();
             b.Property(x => x.ApodDate).IsRequired().HasMaxLength(20);
             b.Property(x => x.QueryTime).IsRequired();
-            b.HasIndex(x => new { x.UserId, x.QueryTime });
+            b.Property(x => x.IsStarred).IsRequired().HasDefaultValue(false);
+            b.Property(x => x.PinnedOrder).IsRequired(false);
+            b.HasIndex(x => new { x.UserId, x.IsStarred, x.QueryTime });
             b.HasIndex(x => x.ApodImageId);
         });
     }

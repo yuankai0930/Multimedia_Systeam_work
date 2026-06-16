@@ -75,8 +75,15 @@ namespace MyCompany.MyApp.Migrations
                     b.Property<Guid>("ApodImageId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("IsStarred")
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
                     b.Property<DateTime>("QueryTime")
                         .HasColumnType("datetime2");
+
+                    b.Property<int?>("PinnedOrder")
+                        .HasColumnType("int");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
@@ -85,7 +92,7 @@ namespace MyCompany.MyApp.Migrations
 
                     b.HasIndex("ApodImageId");
 
-                    b.HasIndex("UserId", "QueryTime");
+                    b.HasIndex("UserId", "IsStarred", "QueryTime");
 
                     b.ToTable("AppApodQueryHistories", (string)null);
                 });

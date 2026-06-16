@@ -82,13 +82,16 @@ public class ApodAppService : MyAppAppService, IApodAppService
 
     /// <summary>
     /// 取得目前登入使用者的 APOD 查詢歷史。
+    /// 排序規則：星號優先（IsStarred=true，按 PinnedOrder ASC），非星號區按 QueryTime DESC。
     /// </summary>
     public async Task<List<ApodQueryHistoryDto>> GetMyHistoryAsync()
     {
         var userId = CurrentUser.GetId();
         var histories = await _apodQueryHistoryRepository.GetListAsync(x => x.UserId == userId);
         var orderedHistories = histories
-            .OrderByDescending(x => x.QueryTime)
+            .OrderByDescending(x => x.IsStarred)
+            .ThenBy(x => x.PinnedOrder)
+            .ThenByDescending(x => x.QueryTime)
             .ToList();
 
         if (orderedHistories.Count == 0)
@@ -229,16 +232,103 @@ public class ApodAppService : MyAppAppService, IApodAppService
         };
     }
 
-    private static ApodQueryHistoryDto MapHistoryToDto(ApodQueryHistory history, ApodImage entity)
+    /// <summary>
+    /// 刪除查詢歷史紀錄（硬刪除）。
+    /// 只允許刪除自己的紀錄，試圖刪除他人資料會拋出授權例外。
+    /// </summary>
+    public async Task DeleteHistoryAsync(Guid historyId)
+    {
+        var history = await _apodQueryHistoryRepository.GetAsync(historyId);
+        if (history.UserId != CurrentUser.GetId())
+        {
+            throw new Volo.Abp.Authorization.AbpAuthorizationException("You can only delete your own history.");
+        }
+
+        await _apodQueryHistoryRepository.DeleteAsync(history, autoSave: true);
+    }
+
+    /// <summary>
+    /// 切換指定歷史的星號狀態。
+    /// 當由非星號轉星號時，自動分配 PinnedOrder；轉非星號時清除 PinnedOrder。
+    /// </summary>
+    public async Task<ApodQueryHistoryDto> ToggleStarredAsync(Guid historyId)
+    {
+        var history = await _apodQueryHistoryRepository.GetAsync(historyId);
+        if (history.UserId != CurrentUser.GetId())
+        {
+            throw new Volo.Abp.Authorization.AbpAuthorizationException("You can only toggle your own history.");
+        }
+
+        history.IsStarred = !history.IsStarred;
+        if (!history.IsStarred)
+        {
+            history.PinnedOrder = null;
+        }
+        else
+        {
+            // 若新轉星號，自動分配最大序號 + 1
+            var maxOrder = await _apodQueryHistoryRepository.GetQueryableAsync();
+            var maxPinnedOrder = maxOrder
+                .Where(x => x.UserId == CurrentUser.GetId() && x.IsStarred)
+                .Max(x => (int?)x.PinnedOrder) ?? -1;
+            history.PinnedOrder = maxPinnedOrder + 1;
+        }
+
+        await _apodQueryHistoryRepository.UpdateAsync(history, autoSave: true);
+
+        // 重新查詢以取得完整 DTO（含 ApodImage 資訊）
+        var updated = await _apodQueryHistoryRepository.GetAsync(historyId);
+        var image = await _apodRepository.GetAsync(updated.ApodImageId);
+        return MapHistoryToDto(updated, image);
+    }
+
+    /// <summary>
+    /// 批次更新星號區歷史的排序順序。
+    /// 提供的 ID 順序決定新的 PinnedOrder（由 0 開始）。
+    /// </summary>
+    public async Task ReorderStarredHistoriesAsync(List<Guid> starredHistoryIds)
+    {
+        var userId = CurrentUser.GetId();
+        var histories = await _apodQueryHistoryRepository.GetListAsync(
+            x => starredHistoryIds.Contains(x.Id) && x.UserId == userId
+        );
+
+        // 驗證全部都是星號項
+        if (histories.Any(x => !x.IsStarred))
+        {
+            throw new Volo.Abp.UserFriendlyException("Only starred items can be reordered.");
+        }
+
+        // 驗證數量一致
+        if (histories.Count != starredHistoryIds.Count)
+        {
+            throw new Volo.Abp.Authorization.AbpAuthorizationException("Invalid history IDs.");
+        }
+
+        // 按提供順序重新分配 PinnedOrder
+        for (int i = 0; i < starredHistoryIds.Count; i++)
+        {
+            var history = histories.FirstOrDefault(x => x.Id == starredHistoryIds[i]);
+            if (history != null)
+            {
+                history.PinnedOrder = i;
+            }
+        }
+
+        await _apodQueryHistoryRepository.UpdateManyAsync(histories, autoSave: true);
+    }
     {
         return new ApodQueryHistoryDto
         {
+            Id = history.Id,
             Date = entity.Date,
             Title = entity.Title,
             Explanation = entity.Explanation,
             MediaType = entity.MediaType,
             Url = entity.Url,
-            QueryTime = history.QueryTime
+            QueryTime = history.QueryTime,
+            IsStarred = history.IsStarred,
+            PinnedOrder = history.PinnedOrder
         };
     }
 

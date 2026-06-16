@@ -123,20 +123,108 @@
           @if (!isHistoryLoading && historyList.length === 0) {
             <p class="text-muted text-center py-4">尚無歷史資料</p>
           }
-          <ul class="list-group list-group-flush">
-            @for (item of historyList; track item.queryTime) {
-              <li
-                class="list-group-item list-group-item-action"
-                [class.active]="apodData?.date === item.date"
-                (click)="selectHistory(item)"
-                style="cursor: pointer;"
+
+          <!-- 星號區（可手動拖曳排序） -->
+          @if (getStarredHistories().length > 0) {
+            <div class="border-bottom">
+              <div class="p-2 bg-light">
+                <small class="text-muted"><i class="fa fa-star text-warning me-1"></i>我的收藏</small>
+              </div>
+              <ul
+                cdkDropList
+                [cdkDropListData]="getStarredHistories()"
+                (cdkDropListDropped)="onStarredDropped($event)"
+                class="list-group list-group-flush"
               >
-                <div class="fw-bold">{{ item.title }}</div>
-                <small class="text-muted d-block">{{ item.date }}</small>
-                <small class="text-muted">查詢時間：{{ item.queryTime | date: 'yyyy-MM-dd HH:mm' }}</small>
-              </li>
-            }
-          </ul>
+                @for (item of getStarredHistories(); track item.id) {
+                  <li
+                    cdkDrag
+                    class="list-group-item"
+                    [class.active]="apodData?.date === item.date"
+                    (click)="selectHistory(item)"
+                    style="cursor: grab; padding: 0.75rem 0.5rem;"
+                  >
+                    <div class="d-flex justify-content-between align-items-start">
+                      <div class="flex-grow-1" style="cursor: pointer; min-width: 0;">
+                        <div class="fw-bold text-truncate">{{ item.title }}</div>
+                        <small class="text-muted d-block">{{ item.date }}</small>
+                        <small class="text-muted">查詢時間：{{ item.queryTime | date: 'yyyy-MM-dd HH:mm' }}</small>
+                      </div>
+                      <div class="ms-2" style="white-space: nowrap;">
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-link p-0 text-warning me-1"
+                          (click)="toggleStar(item, $event)"
+                          [disabled]="isTogglingstar[item.id]"
+                          title="取消收藏"
+                        >
+                          <i class="fa fa-star"></i>
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-link p-0 text-danger"
+                          (click)="deleteHistoryItem(item, $event)"
+                          [disabled]="isDeleting[item.id]"
+                          title="刪除"
+                        >
+                          <i class="fa fa-trash"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+
+          <!-- 一般區（僅時間排序，不可拖曳） -->
+          @if (getNormalHistories().length > 0) {
+            <div>
+              @if (getStarredHistories().length > 0) {
+                <div class="p-2 bg-light">
+                  <small class="text-muted"><i class="fa fa-list me-1"></i>其他查詢</small>
+                </div>
+              }
+              <ul class="list-group list-group-flush">
+                @for (item of getNormalHistories(); track item.id) {
+                  <li
+                    class="list-group-item list-group-item-action"
+                    [class.active]="apodData?.date === item.date"
+                    (click)="selectHistory(item)"
+                    style="cursor: pointer; padding: 0.75rem 0.5rem;"
+                  >
+                    <div class="d-flex justify-content-between align-items-start">
+                      <div class="flex-grow-1" style="min-width: 0;">
+                        <div class="fw-bold text-truncate">{{ item.title }}</div>
+                        <small class="text-muted d-block">{{ item.date }}</small>
+                        <small class="text-muted">查詢時間：{{ item.queryTime | date: 'yyyy-MM-dd HH:mm' }}</small>
+                      </div>
+                      <div class="ms-2" style="white-space: nowrap;">
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-link p-0 text-muted me-1"
+                          (click)="toggleStar(item, $event)"
+                          [disabled]="isTogglingstar[item.id]"
+                          title="加入收藏"
+                        >
+                          <i class="fa fa-star"></i>
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-link p-0 text-danger"
+                          (click)="deleteHistoryItem(item, $event)"
+                          [disabled]="isDeleting[item.id]"
+                          title="刪除"
+                        >
+                          <i class="fa fa-trash"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
         </div>
       </div>
     </div>

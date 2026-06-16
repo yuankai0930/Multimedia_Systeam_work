@@ -12,12 +12,15 @@ export interface ApodImageDto {
 }
 
 export interface ApodQueryHistoryDto {
+  id: string;
   date: string;
   title: string;
   explanation: string;
   mediaType: string;
   url: string;
   queryTime: string;
+  isStarred: boolean;
+  pinnedOrder: number | null;
 }
 
 @Injectable({
@@ -48,5 +51,20 @@ export class ApodService {
   /** 取得目前登入使用者的查詢歷史 */
   getMyHistory(): Observable<ApodQueryHistoryDto[]> {
     return this.http.get<ApodQueryHistoryDto[]>(`${this.apiBase}/my-history`);
+  }
+
+  /** 刪除指定歷史記錄 */
+  deleteHistory(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiBase}/history/${id}`);
+  }
+
+  /** 切換指定歷史的星號狀態 */
+  toggleStarred(id: string): Observable<ApodQueryHistoryDto> {
+    return this.http.post<ApodQueryHistoryDto>(`${this.apiBase}/history/${id}/toggle-starred`, {});
+  }
+
+  /** 批次更新星號區的排序順序 */
+  reorderStarredHistories(ids: string[]): Observable<void> {
+    return this.http.post<void>(`${this.apiBase}/history/reorder-starred`, { starredHistoryIds: ids });
   }
 }

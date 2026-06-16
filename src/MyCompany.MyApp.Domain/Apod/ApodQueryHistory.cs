@@ -28,6 +28,17 @@ public class ApodQueryHistory : Entity<Guid>
     /// </summary>
     public DateTime QueryTime { get; set; }
 
+    /// <summary>
+    /// 是否標記星號（使用者自訂收藏）。
+    /// </summary>
+    public bool IsStarred { get; set; }
+
+    /// <summary>
+    /// 星號項目的排序順序（若 IsStarred=true 則必填，範圍 0-9999）。
+    /// 用於星號區手動排序，按此欄位 ASC 排列。
+    /// </summary>
+    public int? PinnedOrder { get; set; }
+
     protected ApodQueryHistory()
     {
     }
@@ -39,5 +50,7 @@ public class ApodQueryHistory : Entity<Guid>
         ApodImageId = apodImageId;
         ApodDate = apodDate;
         QueryTime = queryTime;
+        IsStarred = false;
+        PinnedOrder = null;
     }
 }

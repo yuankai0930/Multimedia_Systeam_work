@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { CdkDragDrop } from '@angular/cdk/drag-drop';
 import { ApodService, ApodImageDto, ApodQueryHistoryDto } from './apod.service';
 
 @Component({
@@ -15,6 +16,8 @@ export class ApodComponent implements OnInit {
   isLoading = false;
   isHistoryLoading = false;
   isFetching = false;
+  isDeleting: { [key: string]: boolean } = {};
+  isTogglingstar: { [key: string]: boolean } = {};
   errorMessage = '';
 
   constructor(
@@ -89,6 +92,95 @@ export class ApodComponent implements OnInit {
   selectHistory(item: ApodQueryHistoryDto): void {
     this.apodData = this.toApodImage(item);
     this.selectedDate = item.date;
+  }
+
+  /** 刪除歷史項目 */
+  deleteHistoryItem(item: ApodQueryHistoryDto, event: Event): void {
+    event.stopPropagation();
+    if (!confirm(`確定要刪除 ${item.date} 的查詢紀錄嗎？`)) {
+      return;
+    }
+
+    this.isDeleting[item.id] = true;
+    this.apodService.deleteHistory(item.id).subscribe({
+      next: () => {
+        this.historyList = this.historyList.filter(x => x.id !== item.id);
+        if (this.apodData?.date === item.date) {
+          this.apodData = null;
+        }
+        this.isDeleting[item.id] = false;
+      },
+      error: (err) => {
+        alert('刪除失敗，請稍後再試');
+        this.isDeleting[item.id] = false;
+        console.error(err);
+      },
+    });
+  }
+
+  /** 切換星號狀態 */
+  toggleStar(item: ApodQueryHistoryDto, event: Event): void {
+    event.stopPropagation();
+    this.isTogglingstar[item.id] = true;
+    this.apodService.toggleStarred(item.id).subscribe({
+      next: (updated) => {
+        const index = this.historyList.findIndex(x => x.id === item.id);
+        if (index >= 0) {
+          this.historyList[index] = updated;
+          this.historyList = this.historyList.sort((a, b) => {
+            if (a.isStarred !== b.isStarred) return b.isStarred ? 1 : -1;
+            if (a.isStarred && a.pinnedOrder !== null && b.pinnedOrder !== null) {
+              return a.pinnedOrder - b.pinnedOrder;
+            }
+            return new Date(b.queryTime).getTime() - new Date(a.queryTime).getTime();
+          });
+        }
+        this.isTogglingstar[item.id] = false;
+      },
+      error: (err) => {
+        alert('切換失敗，請稍後再試');
+        this.isTogglingstar[item.id] = false;
+        console.error(err);
+      },
+    });
+  }
+
+  /** 拖曳星號區完成事件 */
+  onStarredDropped(event: CdkDragDrop<ApodQueryHistoryDto[]>): void {
+    if (event.previousIndex === event.currentIndex) {
+      return;
+    }
+
+    const starredItems = this.getStarredHistories();
+    const reorderedIds = starredItems.map(x => x.id);
+    
+    this.apodService.reorderStarredHistories(reorderedIds).subscribe({
+      next: () => {
+        // 重新載入歷史確保順序一致
+        this.loadHistory();
+      },
+      error: (err) => {
+        alert('重排失敗，請稍後再試');
+        this.loadHistory();
+        console.error(err);
+      },
+    });
+  }
+
+  /** 取得所有星號項目 */
+  getStarredHistories(): ApodQueryHistoryDto[] {
+    return this.historyList.filter(x => x.isStarred).sort((a, b) => {
+      const aOrder = a.pinnedOrder ?? 9999;
+      const bOrder = b.pinnedOrder ?? 9999;
+      return aOrder - bOrder;
+    });
+  }
+
+  /** 取得所有非星號項目 */
+  getNormalHistories(): ApodQueryHistoryDto[] {
+    return this.historyList
+      .filter(x => !x.isStarred)
+      .sort((a, b) => new Date(b.queryTime).getTime() - new Date(a.queryTime).getTime());
   }
 
   isImage(item: ApodImageDto): boolean {
