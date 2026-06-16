@@ -232,6 +232,22 @@ public class ApodAppService : MyAppAppService, IApodAppService
         };
     }
 
+    private static ApodQueryHistoryDto MapHistoryToDto(ApodQueryHistory history, ApodImage entity)
+    {
+        return new ApodQueryHistoryDto
+        {
+            Id = history.Id,
+            Date = entity.Date,
+            Title = entity.Title,
+            Explanation = entity.Explanation,
+            MediaType = entity.MediaType,
+            Url = entity.Url,
+            QueryTime = history.QueryTime,
+            IsStarred = history.IsStarred,
+            PinnedOrder = history.PinnedOrder
+        };
+    }
+
     /// <summary>
     /// 刪除查詢歷史紀錄（硬刪除）。
     /// 只允許刪除自己的紀錄，試圖刪除他人資料會拋出授權例外。
@@ -286,8 +302,9 @@ public class ApodAppService : MyAppAppService, IApodAppService
     /// 批次更新星號區歷史的排序順序。
     /// 提供的 ID 順序決定新的 PinnedOrder（由 0 開始）。
     /// </summary>
-    public async Task ReorderStarredHistoriesAsync(List<Guid> starredHistoryIds)
+    public async Task ReorderStarredHistoriesAsync(ReorderStarredHistoriesInput input)
     {
+        var starredHistoryIds = input.StarredHistoryIds;
         var userId = CurrentUser.GetId();
         var histories = await _apodQueryHistoryRepository.GetListAsync(
             x => starredHistoryIds.Contains(x.Id) && x.UserId == userId
@@ -316,20 +333,6 @@ public class ApodAppService : MyAppAppService, IApodAppService
         }
 
         await _apodQueryHistoryRepository.UpdateManyAsync(histories, autoSave: true);
-    }
-    {
-        return new ApodQueryHistoryDto
-        {
-            Id = history.Id,
-            Date = entity.Date,
-            Title = entity.Title,
-            Explanation = entity.Explanation,
-            MediaType = entity.MediaType,
-            Url = entity.Url,
-            QueryTime = history.QueryTime,
-            IsStarred = history.IsStarred,
-            PinnedOrder = history.PinnedOrder
-        };
     }
 
     private static string NormalizeDate(string date)

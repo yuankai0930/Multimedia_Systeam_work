@@ -44,5 +44,5 @@ public interface IApodAppService : IApplicationService
     /// 更新星號區歷史項的排序順序（批次操作）。
     /// 需提供星號項的 ID 清單，系統按順序重新分配 PinnedOrder。
     /// </summary>
-    Task ReorderStarredHistoriesAsync(List<Guid> starredHistoryIds);
+    Task ReorderStarredHistoriesAsync(ReorderStarredHistoriesInput input);
 }

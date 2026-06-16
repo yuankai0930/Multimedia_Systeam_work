@@ -118,6 +118,14 @@ NASA 每日天文圖片（APOD）功能目前支援以下流程：
 - 後端 API 驗證使用者所有權，防止跨用戶存取
 - 刪除/標星/排序操作必須登入後才能執行
 
+#### 實作位置
+
+- 查詢與歷史資料處理：`src/MyCompany.MyApp.Application/Apod/ApodAppService.cs`
+- 歷史操作路由：`src/MyCompany.MyApp.HttpApi/Controllers/ApodHistoryController.cs`
+- 前端呼叫：`angular/src/app/apod/apod.service.ts`
+
+> 如果你在修改後看到「切換失敗請稍後再試」，先確認後端已重新啟動，避免舊執行個體還在提供 API。
+
 ### APOD 主要 API
 
 - `GET /api/app/apod/by-date?date=yyyy-MM-dd`：查詢指定日期 APOD（需登入）
